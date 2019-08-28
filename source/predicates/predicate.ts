@@ -20,6 +20,7 @@ export interface Validator<T> {
 */
 export interface PredicateOptions {
 	optional?: boolean;
+	invert?: boolean;
 }
 
 /**
@@ -70,7 +71,11 @@ export class Predicate<T = unknown> implements BasePredicate<T> {
 				// We do not include type in this label as we do for other messages, because it would be redundant.
 				const lbl = label && label.substring(this.type.length + 1);
 
-				return `Expected ${lbl || 'argument'} to be of type \`${this.type}\` but received type \`${is(value)}\``;
+				if (options.invert) {
+					return `Expected ${lbl || 'argument'}${options.invert ? ' not' : ''} to be of type \`${this.type}\``;
+				}
+
+				return `Expected ${lbl || 'argument'}${options.invert ? ' not' : ''} to be of type \`${this.type}\` but received type \`${is(value)}\``;
 			},
 			validator: value => (is as any)[x](value)
 		});
@@ -105,7 +110,11 @@ export class Predicate<T = unknown> implements BasePredicate<T> {
 				continue;
 			}
 
-			const result = validator(value);
+			let result = validator(value);
+
+			if (is.boolean(result) && this.options.invert) {
+				result = !result;
+			}
 
 			if (result === true) {
 				continue;
